@@ -7,6 +7,9 @@ public partial class MainPage : ContentPage
 	public MainPage()
 	{
 		InitializeComponent();
+#if DOTNET_RUNTIME_LOCAL_BUILD
+		Utils.DumpDynamicallyInvokedMethodStats();
+#endif
 	}
 
 	private void OnCounterClicked(object sender, EventArgs e)
