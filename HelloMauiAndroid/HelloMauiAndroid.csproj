@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst</TargetFrameworks>
+		<TargetFramework>net8.0-android</TargetFramework>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0</TargetFrameworks>
 		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
 		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
@@ -27,6 +27,8 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'tizen'">6.5</SupportedOSPlatformVersion>
+
+		<DefineConstants Condition="'$(DotnetRuntimeRepo)' != ''">$(DefineConstants);DOTNET_RUNTIME_LOCAL_BUILD</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -50,5 +52,22 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
 	</ItemGroup>
+
+	<Target Name="UpdateRuntimePackAndAOTCompiler" 
+		AfterTargets="ResolveFrameworkReferences"
+		Condition="'$(DotnetRuntimeRepo)' != ''" >
+		<ItemGroup>
+			<!-- update runtime pack to local build -->
+			<ResolvedRuntimePack PackageDirectory="$(DotnetRuntimeRepo)/artifacts/bin/microsoft.netcore.app.runtime.android-arm64/Debug"
+				Condition="'%(ResolvedRuntimePack.FrameworkName)' == 'Microsoft.NETCore.App'" />
+			<!-- remove AOT compiler reference for android-arm64 -->
+			<MonoAotCrossCompiler Remove="@(MonoAotCrossCompiler)"
+				Condition="%(RuntimeIdentifier) == 'android-arm64'" />
+			<!-- update AOT compiler reference to local build -->
+			<MonoAotCrossCompiler Include="$(DotnetRuntimeRepo)/artifacts/bin/mono/android.arm64.Debug/cross/android-arm64/mono-aot-cross">
+				<RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+			</MonoAotCrossCompiler>
+		</ItemGroup>
+	</Target>
 
 </Project>
